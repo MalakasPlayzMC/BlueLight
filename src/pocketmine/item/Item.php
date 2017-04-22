@@ -483,15 +483,13 @@ class Item implements ItemIds, \JsonSerializable{
 
 		return null;
 	}
-
-	/**
+		/**
 	 * @return bool
 	 */
 	public function hasEnchantments() : bool{
 		if(!$this->hasCompoundTag()){
 			return false;
 		}
-
 		$tag = $this->getNamedTag();
 		if(isset($tag->ench)){
 			$tag = $tag->ench;
@@ -499,10 +497,26 @@ class Item implements ItemIds, \JsonSerializable{
 				return true;
 			}
 		}
-
 		return false;
 	}
-
+	/**
+	* @param int $id
+	*
+	* @return bool
+	*/
+	public function hasEnchantment(int $id) : bool{
+		if(!$this->hasEnchantments()){
+			return false;
+		}
+		
+		foreach($this->getNamedTag()->ench as $entry){
+			if($entry["id"] === $id){
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	/**
 	 * @param int $id
 	 *
@@ -512,7 +526,6 @@ class Item implements ItemIds, \JsonSerializable{
 		if(!$this->hasEnchantments()){
 			return null;
 		}
-
 		foreach($this->getNamedTag()->ench as $entry){
 			if($entry["id"] === $id){
 				$e = Enchantment::getEnchantment($entry["id"]);
@@ -520,10 +533,29 @@ class Item implements ItemIds, \JsonSerializable{
 				return $e;
 			}
 		}
-
 		return null;
 	}
-
+	
+	/**
+	* @param int $id
+	* @param int $level
+	*/
+	public function removeEnchantment(int $id, int $level = null){
+		if(!$this->hasEnchantments()){
+			return;
+		}
+		
+		$tag = $this->getNamedTag();
+		foreach($tag->ench as $k => $entry){
+			if($entry["id"] === $id){
+				if($level === null or $entry["lvl"] === $level){
+					unset($tag->ench[$k]);
+					break;
+				}
+			}
+		}
+		$this->setNamedTag($tag);
+	}
 	/**
 	 * @param Enchantment $ench
 	 */
@@ -533,14 +565,11 @@ class Item implements ItemIds, \JsonSerializable{
 		}else{
 			$tag = $this->getNamedTag();
 		}
-
 		if(!isset($tag->ench)){
 			$tag->ench = new ListTag("ench", []);
 			$tag->ench->setTagType(NBT::TAG_Compound);
 		}
-
 		$found = false;
-
 		foreach($tag->ench as $k => $entry){
 			if($entry["id"] === $ench->getId()){
 				$tag->ench->{$k} = new CompoundTag("", [
@@ -551,17 +580,14 @@ class Item implements ItemIds, \JsonSerializable{
 				break;
 			}
 		}
-
 		if(!$found){
 			$tag->ench->{count($tag->ench) + 1} = new CompoundTag("", [
 				"id" => new ShortTag("id", $ench->getId()),
 				"lvl" => new ShortTag("lvl", $ench->getLevel())
 			]);
 		}
-
 		$this->setNamedTag($tag);
 	}
-
 	/**
 	 * @return Enchantment[]
 	 */
@@ -569,15 +595,12 @@ class Item implements ItemIds, \JsonSerializable{
 		if(!$this->hasEnchantments()){
 			return [];
 		}
-
 		$enchantments = [];
-
 		foreach($this->getNamedTag()->ench as $entry){
 			$e = Enchantment::getEnchantment($entry["id"]);
 			$e->setLevel($entry["lvl"]);
 			$enchantments[] = $e;
 		}
-
 		return $enchantments;
 	}
 
